@@ -7,6 +7,7 @@ public class Ingredient {
     private Double price;
     private Dish dish;
     private Double quantity;
+    private String unit;
 
     public Double getQuantity() {
         return quantity;
@@ -14,6 +15,14 @@ public class Ingredient {
 
     public void setQuantity(Double quantity) {
         this.quantity = quantity;
+    }
+
+    public String getUnit() {
+        return unit;
+    }
+
+    public void setUnit(String unit) {
+        this.unit = unit;
     }
 
     public Ingredient() {
@@ -95,6 +104,7 @@ public class Ingredient {
                 ", price=" + price +
                 ", dishName=" + getDishName() +
                 ", quantity=" + quantity +
+                ", unit='" + unit + '\'' +
                 '}';
     }
 }
