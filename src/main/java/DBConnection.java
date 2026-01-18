@@ -7,9 +7,9 @@ public class DBConnection {
     private static final String URL =
             "jdbc:postgresql://localhost:5432/mini_dish_db";
     private static final String USER =
-            "mini_dish_db_manager";
+            "postgres";
     private static final String PASSWORD =
-            "123456";
+            "004254";
 
     public static Connection getConnection() {
         try {
