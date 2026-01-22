@@ -22,8 +22,7 @@ public class DataRetriever {
                     dish.setId(resultSet.getInt("dish_id"));
                     dish.setName(resultSet.getString("dish_name"));
                     dish.setDishType(DishTypeEnum.valueOf(resultSet.getString("dish_type").toUpperCase()));
-                    dish.setPrice(resultSet.getObject("dish_price") == null
-                            ? null : resultSet.getDouble("dish_price"));
+                    dish.setPrice(resultSet.getObject("dish_price") == null ? null : resultSet.getDouble("dish_price"));
                     dish.setIngredients(findIngredientsByDishId(id));
                     return dish;
                 }
@@ -54,8 +53,7 @@ public class DataRetriever {
                 dish.setId(resultSet.getInt("dish_id"));
                 dish.setName(resultSet.getString("dish_name"));
                 dish.setDishType(DishTypeEnum.valueOf(resultSet.getString("dish_type").toUpperCase()));
-                dish.setPrice(resultSet.getObject("dish_price") == null
-                        ? null : resultSet.getDouble("dish_price"));
+                dish.setPrice(resultSet.getObject("dish_price") == null ? null : resultSet.getDouble("dish_price"));
                 dish.setIngredients(findIngredientsByDishId(dish.getId()));
                 dishes.add(dish);
             }
@@ -102,65 +100,6 @@ public class DataRetriever {
         }
     }
 
-    List<Ingredient> findAllIngredients() {
-        String sql = """
-                select id, name, price, category
-                from ingredient
-                order by id;
-                """;
-
-        List<Ingredient> ingredients = new ArrayList<>();
-
-        try (Connection connection = DBConnection.getConnection();
-             PreparedStatement ps = connection.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-
-            while (rs.next()) {
-                Ingredient ingredient = new Ingredient();
-                ingredient.setId(rs.getInt("id"));
-                ingredient.setName(rs.getString("name"));
-                ingredient.setPrice(rs.getDouble("price"));
-                ingredient.setCategory(CategoryEnum.valueOf(rs.getString("category").toUpperCase()));
-                ingredients.add(ingredient);
-            }
-
-            return ingredients;
-
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    List<DishIngredient> findAllDishIngredients() {
-        String sql = """
-                select id, dish_id, ingredient_id, quantity, unit
-                from dishingredient
-                order by id;
-                """;
-
-        List<DishIngredient> dishIngredients = new ArrayList<>();
-
-        try (Connection connection = DBConnection.getConnection();
-             PreparedStatement ps = connection.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-
-            while (rs.next()) {
-                DishIngredient di = new DishIngredient();
-                di.setId(rs.getInt("id"));
-                di.setDishId(rs.getInt("dish_id"));
-                di.setIngredientId(rs.getInt("ingredient_id"));
-                di.setQuantity(rs.getDouble("quantity"));
-                di.setUnit(rs.getString("unit"));
-                dishIngredients.add(di);
-            }
-
-            return dishIngredients;
-
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     Dish saveDish(Dish toSave) {
         String upsertDishSql = """
                 INSERT INTO dish (id, price, name, dish_type)
@@ -178,9 +117,7 @@ public class DataRetriever {
             Integer dishId;
             try (PreparedStatement ps = conn.prepareStatement(upsertDishSql)) {
 
-                ps.setInt(1, toSave.getId() != null
-                        ? toSave.getId()
-                        : getNextSerialValue(conn, "dish", "id"));
+                ps.setInt(1, toSave.getId() != null ? toSave.getId() : getNextSerialValue(conn, "dish", "id"));
 
                 if (toSave.getPrice() != null) {
                     ps.setDouble(2, toSave.getPrice());
@@ -215,6 +152,9 @@ public class DataRetriever {
         String sql = """
                 INSERT INTO ingredient (name, price, category)
                 VALUES (?, ?, ?::ingredient_category)
+                ON CONFLICT (name) DO UPDATE
+                SET price = EXCLUDED.price,
+                    category = EXCLUDED.category
                 RETURNING id
                 """;
 
@@ -222,17 +162,20 @@ public class DataRetriever {
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, ingredient.getName());
-            ps.setDouble(2, ingredient.getPrice());
+
+            if (ingredient.getPrice() != null) {
+                ps.setDouble(2, ingredient.getPrice());
+            } else {
+                ps.setNull(2, Types.DOUBLE);
+            }
+
             ps.setString(3, ingredient.getCategory().name());
 
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    ingredient.setId(rs.getInt(1));
-                    return ingredient;
-                }
+                rs.next();
+                ingredient.setId(rs.getInt(1));
+                return ingredient;
             }
-
-            throw new RuntimeException("Failed to save ingredient");
 
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -243,6 +186,9 @@ public class DataRetriever {
         String sql = """
                 INSERT INTO dishingredient (dish_id, ingredient_id, quantity, unit)
                 VALUES (?, ?, ?, ?::unit_type)
+                ON CONFLICT (dish_id, ingredient_id) DO UPDATE
+                SET quantity = EXCLUDED.quantity,
+                    unit = EXCLUDED.unit
                 RETURNING id
                 """;
 
@@ -255,13 +201,10 @@ public class DataRetriever {
             ps.setString(4, dishIngredient.getUnit());
 
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    dishIngredient.setId(rs.getInt(1));
-                    return dishIngredient;
-                }
+                rs.next();
+                dishIngredient.setId(rs.getInt(1));
+                return dishIngredient;
             }
-
-            throw new RuntimeException("Failed to save DishIngredient");
 
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -283,6 +226,9 @@ public class DataRetriever {
         String sql = """
                 INSERT INTO dishingredient (dish_id, ingredient_id, quantity, unit)
                 VALUES (?, ?, ?, ?::unit_type)
+                ON CONFLICT (dish_id, ingredient_id) DO UPDATE
+                SET quantity = EXCLUDED.quantity,
+                    unit = EXCLUDED.unit
                 """;
 
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -331,5 +277,13 @@ public class DataRetriever {
                 return rs.getInt(1);
             }
         }
+    }
+
+    public List<Ingredient> findAllIngredients() {
+        return List.of();
+    }
+
+    public List<DishIngredient> findAllDishIngredients() {
+        return List.of();
     }
 }
