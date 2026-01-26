@@ -7,7 +7,7 @@ DROP TYPE IF EXISTS unit_type CASCADE;
 
 CREATE TYPE dish_type AS ENUM ('START', 'MAIN', 'DESSERT');
 CREATE TYPE ingredient_category AS ENUM ('VEGETABLE', 'ANIMAL', 'MARINE', 'DAIRY', 'OTHER');
-CREATE TYPE unit_type AS ENUM ('KG', 'L', 'PIECE', 'G', 'ML');
+CREATE TYPE unit_type AS ENUM ('PCS', 'KG', 'L');
 
 CREATE TABLE Dish (
     id SERIAL PRIMARY KEY,
