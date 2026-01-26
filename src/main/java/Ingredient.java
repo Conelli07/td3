@@ -1,3 +1,5 @@
+import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 
 public class Ingredient {
@@ -8,6 +10,37 @@ public class Ingredient {
     private Dish dish;
     private Double quantity;
     private String unit;
+    private List<StockMovement> stockMovementList;
+
+    public StockValue getStockValueAt(Instant t) {
+        if (stockMovementList == null || stockMovementList.isEmpty()) {
+            return new StockValue(0.0, UnitTypeEnum.KG);
+        }
+
+        double totalQuantity = 0.0;
+        UnitTypeEnum unitType = UnitTypeEnum.KG;
+
+        for (StockMovement movement : stockMovementList) {
+            if (movement.getCreationDatetime().isBefore(t) || movement.getCreationDatetime().equals(t)) {
+                if (movement.getType() == MovementTypeEnum.IN) {
+                    totalQuantity += movement.getValue().getQuantity();
+                } else if (movement.getType() == MovementTypeEnum.OUT) {
+                    totalQuantity -= movement.getValue().getQuantity();
+                }
+                unitType = movement.getValue().getUnit();
+            }
+        }
+
+        return new StockValue(totalQuantity, unitType);
+    }
+
+    public List<StockMovement> getStockMovementList() {
+        return stockMovementList;
+    }
+
+    public void setStockMovementList(List<StockMovement> stockMovementList) {
+        this.stockMovementList = stockMovementList;
+    }
 
     public Double getQuantity() {
         return quantity;
@@ -105,6 +138,7 @@ public class Ingredient {
                 ", dishName=" + getDishName() +
                 ", quantity=" + quantity +
                 ", unit='" + unit + '\'' +
+                ", stockMovements=" + (stockMovementList != null ? stockMovementList.size() + " items" : "null") +
                 '}';
     }
 }
